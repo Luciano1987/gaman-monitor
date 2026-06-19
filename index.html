@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a0a0f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>GAMAN Monitor</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #0a0a0f;
+  color: #fff;
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+.pantalla { display: none; min-height: 100vh; padding: 28px 20px 36px; flex-direction: column; }
+.pantalla.activa { display: flex; }
+
+/* ── PANTALLA 1: PERFIL ── */
+#p-perfil { align-items: center; justify-content: center; gap: 20px; }
+
+.logo { font-size: 46px; font-weight: 900; letter-spacing: 5px; color: #e74c3c; }
+.logo span { color: #fff; }
+.subtitulo { color: #555; font-size: 13px; letter-spacing: 2px; text-transform: uppercase; margin-top: -14px; }
+
+.card {
+  background: #13131a;
+  border-radius: 22px;
+  padding: 28px;
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  border: 1px solid #1e1e2e;
+}
+
+label {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  color: #666;
+  text-transform: uppercase;
+  margin-bottom: 7px;
+}
+
+input[type=text], input[type=number] {
+  width: 100%;
+  background: #0a0a0f;
+  border: 1.5px solid #1e1e2e;
+  border-radius: 12px;
+  padding: 15px 16px;
+  font-size: 17px;
+  color: #fff;
+  outline: none;
+  -webkit-appearance: none;
+  transition: border-color 0.2s;
+}
+input:focus { border-color: #e74c3c; }
+
+.fila { display: flex; gap: 12px; }
+.fila > div { flex: 1; }
+
+.sexo-grupo { display: flex; gap: 10px; }
+.sexo-btn {
+  flex: 1; padding: 15px; border-radius: 12px;
+  border: 1.5px solid #1e1e2e; background: #0a0a0f;
+  color: #555; font-size: 15px; cursor: pointer;
+  text-align: center; transition: all 0.2s; font-weight: 600;
+  -webkit-user-select: none; user-select: none;
+}
+.sexo-btn.sel { border-color: #e74c3c; background: rgba(231,76,60,0.1); color: #fff; }
+
+.btn-rojo {
+  width: 100%; padding: 18px;
+  background: #e74c3c; border: none; border-radius: 14px;
+  color: #fff; font-size: 17px; font-weight: 800;
+  letter-spacing: 2px; text-transform: uppercase; cursor: pointer;
+  -webkit-user-select: none; user-select: none;
+  transition: opacity 0.2s;
+}
+.btn-rojo:active { opacity: 0.8; }
+.btn-rojo:disabled { opacity: 0.35; cursor: not-allowed; }
+
+.ble-aviso {
+  font-size: 12px; color: #444; text-align: center;
+  line-height: 1.6; max-width: 380px;
+}
+
+/* ── PANTALLA 2: CONECTANDO ── */
+#p-conectando { align-items: center; justify-content: center; gap: 28px; }
+
+.spinner {
+  width: 72px; height: 72px;
+  border: 5px solid #1e1e2e;
+  border-top-color: #e74c3c;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.txt-conectando { color: #888; font-size: 14px; letter-spacing: 2px; text-align: center; line-height: 1.8; }
+
+.btn-cancelar {
+  padding: 14px 36px; background: transparent;
+  border: 1.5px solid #333; border-radius: 12px;
+  color: #666; font-size: 15px; cursor: pointer;
+}
+
+/* ── PANTALLA 3: SESION ── */
+#p-sesion { gap: 16px; }
+
+.top-bar { display: flex; justify-content: space-between; align-items: center; }
+.nombre-top { font-size: 13px; color: #666; letter-spacing: 1px; text-transform: uppercase; }
+.crono { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.bpm-wrap {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 6px;
+  min-height: 200px;
+}
+
+.bpm-num {
+  font-size: 130px; font-weight: 900; line-height: 1;
+  font-variant-numeric: tabular-nums;
+  transition: color 0.4s;
+}
+.bpm-unit { font-size: 14px; letter-spacing: 3px; color: #555; text-transform: uppercase; }
+
+.zona-tag {
+  margin-top: 6px; padding: 8px 22px; border-radius: 30px;
+  font-size: 13px; font-weight: 700; letter-spacing: 2px;
+  text-transform: uppercase; transition: all 0.4s;
+  border: 1.5px solid transparent;
+}
+
+.zonas-pills { display: flex; gap: 8px; justify-content: center; }
+.pill {
+  padding: 5px 14px; border-radius: 20px;
+  font-size: 12px; font-weight: 700;
+  opacity: 0.2; transition: opacity 0.3s;
+  border: 1.5px solid;
+}
+.pill.on { opacity: 1; }
+
+.chart-box {
+  background: #13131a; border-radius: 16px; border: 1px solid #1e1e2e;
+  padding: 12px; position: relative;
+}
+.chart-box canvas { display: block; width: 100% !important; }
+
+.btn-stop {
+  padding: 18px; background: transparent;
+  border: 2px solid #e74c3c; border-radius: 14px;
+  color: #e74c3c; font-size: 17px; font-weight: 800;
+  letter-spacing: 2px; text-transform: uppercase; cursor: pointer;
+  -webkit-user-select: none; user-select: none;
+}
+.btn-stop:active { background: rgba(231,76,60,0.1); }
+
+/* ── PANTALLA 4: RESUMEN ── */
+#p-resumen { gap: 18px; }
+
+.resumen-header { text-align: center; }
+.resumen-titulo { font-size: 30px; font-weight: 900; }
+.resumen-nombre { color: #e74c3c; font-size: 17px; font-weight: 600; margin-top: 2px; }
+
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.stat {
+  background: #13131a; border-radius: 16px; padding: 18px;
+  border: 1px solid #1e1e2e; text-align: center;
+}
+.stat .v { font-size: 38px; font-weight: 900; color: #e74c3c; font-variant-numeric: tabular-nums; }
+.stat .e { font-size: 11px; color: #555; letter-spacing: 1.5px; text-transform: uppercase; margin-top: 3px; }
+
+.stat-doble { display: flex; gap: 10px; }
+.stat-doble .mini { flex: 1; }
+.stat-doble .mini .v { font-size: 28px; }
+
+.zonas-card {
+  background: #13131a; border-radius: 16px; padding: 20px;
+  border: 1px solid #1e1e2e; display: flex; flex-direction: column; gap: 12px;
+}
+.zonas-card h3 { font-size: 11px; color: #555; letter-spacing: 1.5px; text-transform: uppercase; }
+
+.zona-row { display: flex; align-items: center; gap: 10px; }
+.zona-row .zn { font-size: 12px; color: #888; width: 110px; flex-shrink: 0; }
+.zona-row .track { flex: 1; height: 8px; background: #1e1e2e; border-radius: 4px; overflow: hidden; }
+.zona-row .fill { height: 100%; border-radius: 4px; transition: width 1.2s ease; }
+.zona-row .pct { font-size: 12px; font-weight: 700; width: 38px; text-align: right; }
+
+/* Colores zona */
+.c1 { color: #3498db; } .c2 { color: #2ecc71; } .c3 { color: #f1c40f; } .c4 { color: #e67e22; } .c5 { color: #e74c3c; }
+.b1 { background: #3498db; } .b2 { background: #2ecc71; } .b3 { background: #f1c40f; } .b4 { background: #e67e22; } .b5 { background: #e74c3c; }
+.t1 { color: #3498db; border-color: #3498db; background: rgba(52,152,219,0.12); }
+.t2 { color: #2ecc71; border-color: #2ecc71; background: rgba(46,204,113,0.12); }
+.t3 { color: #f1c40f; border-color: #f1c40f; background: rgba(241,196,15,0.12); }
+.t4 { color: #e67e22; border-color: #e67e22; background: rgba(230,126,34,0.12); }
+.t5 { color: #e74c3c; border-color: #e74c3c; background: rgba(231,76,60,0.12); }
+</style>
+</head>
+<body>
+
+<!-- PERFIL -->
+<div class="pantalla activa" id="p-perfil">
+  <div class="logo">GAMAN<span>.</span></div>
+  <div class="subtitulo">Monitor de Entrenamiento</div>
+
+  <div class="card">
+    <div>
+      <label>Nombre</label>
+      <input type="text" id="inp-nombre" placeholder="Tu nombre" autocomplete="off" autocorrect="off">
+    </div>
+
+    <div class="fila">
+      <div>
+        <label>Edad</label>
+        <input type="number" id="inp-edad" placeholder="30" inputmode="numeric">
+      </div>
+      <div>
+        <label>Peso (kg)</label>
+        <input type="number" id="inp-peso" placeholder="70" inputmode="numeric">
+      </div>
+    </div>
+
+    <div>
+      <label>Sexo biologico</label>
+      <div class="sexo-grupo">
+        <div class="sexo-btn sel" data-v="M" onclick="selSexo(this)">Masculino</div>
+        <div class="sexo-btn" data-v="F" onclick="selSexo(this)">Femenino</div>
+      </div>
+    </div>
+
+    <button class="btn-rojo" onclick="iniciar()">CONECTAR SENSOR E INICIAR</button>
+
+    <div class="ble-aviso">
+      Asegurate que el sensor COOSPO este prendido.<br>
+      Chrome va a mostrar una ventana para seleccionarlo.
+    </div>
+  </div>
+</div>
+
+<!-- CONECTANDO -->
+<div class="pantalla" id="p-conectando">
+  <div class="spinner"></div>
+  <div class="txt-conectando">CONECTANDO AL SENSOR<br><br>Selecciona tu COOSPO<br>en la ventana de Chrome</div>
+  <button class="btn-cancelar" onclick="cancelar()">Cancelar</button>
+</div>
+
+<!-- SESION -->
+<div class="pantalla" id="p-sesion">
+  <div class="top-bar">
+    <div class="nombre-top" id="txt-nombre">—</div>
+    <div class="crono" id="txt-crono">00:00</div>
+  </div>
+
+  <div class="bpm-wrap">
+    <div class="bpm-num" id="txt-bpm">--</div>
+    <div class="bpm-unit">BPM</div>
+    <div class="zona-tag" id="txt-zona">—</div>
+  </div>
+
+  <div class="zonas-pills">
+    <div class="pill c1" style="border-color:#3498db" id="pill1">Z1</div>
+    <div class="pill c2" style="border-color:#2ecc71" id="pill2">Z2</div>
+    <div class="pill c3" style="border-color:#f1c40f" id="pill3">Z3</div>
+    <div class="pill c4" style="border-color:#e67e22" id="pill4">Z4</div>
+    <div class="pill c5" style="border-color:#e74c3c" id="pill5">Z5</div>
+  </div>
+
+  <div class="chart-box">
+    <canvas id="cv-live" height="140"></canvas>
+  </div>
+
+  <button class="btn-stop" onclick="terminar()">TERMINAR SESION</button>
+</div>
+
+<!-- RESUMEN -->
+<div class="pantalla" id="p-resumen">
+  <div class="resumen-header">
+    <div class="resumen-titulo">Resumen</div>
+    <div class="resumen-nombre" id="r-nombre"></div>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="v" id="r-duracion">—</div>
+      <div class="e">Duracion</div>
+    </div>
+    <div class="stat">
+      <div class="v" id="r-calorias">—</div>
+      <div class="e">Calorias (kcal)</div>
+    </div>
+    <div class="stat">
+      <div class="v" id="r-promedio">—</div>
+      <div class="e">BPM Promedio</div>
+    </div>
+    <div class="stat stat-doble">
+      <div class="mini">
+        <div class="v" id="r-max">—</div>
+        <div class="e">Maximo</div>
+      </div>
+      <div class="mini">
+        <div class="v" id="r-min">—</div>
+        <div class="e">Minimo</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="zonas-card">
+    <h3>Tiempo por zona</h3>
+    <div class="zona-row">
+      <div class="zn c1">Z1 Recuperacion</div>
+      <div class="track"><div class="fill b1" id="fill1" style="width:0%"></div></div>
+      <div class="pct c1" id="pct1">0%</div>
+    </div>
+    <div class="zona-row">
+      <div class="zn c2">Z2 Base</div>
+      <div class="track"><div class="fill b2" id="fill2" style="width:0%"></div></div>
+      <div class="pct c2" id="pct2">0%</div>
+    </div>
+    <div class="zona-row">
+      <div class="zn c3">Z3 Aerobico</div>
+      <div class="track"><div class="fill b3" id="fill3" style="width:0%"></div></div>
+      <div class="pct c3" id="pct3">0%</div>
+    </div>
+    <div class="zona-row">
+      <div class="zn c4">Z4 Umbral</div>
+      <div class="track"><div class="fill b4" id="fill4" style="width:0%"></div></div>
+      <div class="pct c4" id="pct4">0%</div>
+    </div>
+    <div class="zona-row">
+      <div class="zn c5">Z5 Maximo</div>
+      <div class="track"><div class="fill b5" id="fill5" style="width:0%"></div></div>
+      <div class="pct c5" id="pct5">0%</div>
+    </div>
+  </div>
+
+  <div class="chart-box">
+    <canvas id="cv-resumen" height="160"></canvas>
+  </div>
+
+  <button class="btn-rojo" onclick="nuevaSesion()">NUEVA SESION</button>
+</div>
+
+<script>
+// ── Estado ───────────────────────────────────────────
+const S = {
+  sexo: 'M',
+  nombre: '',
+  edad: 30,
+  peso: 70,
+  datos: [],       // [{ts, bpm}]
+  device: null,
+  char: null,
+  cronoTimer: null,
+  seg: 0,
+  liveData: [],
+  liveLabels: []
+};
+
+const ZONA_LABELS = ['Recuperacion','Base Aerobica','Aerobico','Umbral','Maximo'];
+const ZONA_CLASES = ['t1','t2','t3','t4','t5'];
+const ZONA_COLORES = ['#3498db','#2ecc71','#f1c40f','#e67e22','#e74c3c'];
+
+// HR Measurement UUID
+const HR_UUID = '00002a37-0000-1000-8000-00805f9b34fb';
+
+// ── Helpers ──────────────────────────────────────────
+function mostrar(id) {
+  document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activa'));
+  document.getElementById(id).classList.add('activa');
+}
+
+function selSexo(el) {
+  document.querySelectorAll('.sexo-btn').forEach(b => b.classList.remove('sel'));
+  el.classList.add('sel');
+  S.sexo = el.dataset.v;
+}
+
+function zona(bpm, edad) {
+  const maxHR = 220 - edad;
+  const pct = bpm / maxHR * 100;
+  if (pct < 60)  return 1;
+  if (pct < 70)  return 2;
+  if (pct < 80)  return 3;
+  if (pct < 90)  return 4;
+  return 5;
+}
+
+function parseBPM(val) {
+  const flags = val.getUint8(0);
+  return (flags & 0x01) ? val.getUint16(1, true) : val.getUint8(1);
+}
+
+function formatCrono(s) {
+  return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+}
+
+function calorias(bpms, edad, peso, sexo) {
+  return bpms.reduce((acc, b) => {
+    let c = sexo === 'M'
+      ? (-55.0969 + 0.6309*b + 0.1988*peso + 0.2017*edad) / 4.184
+      : (-20.4022 + 0.4472*b - 0.1263*peso + 0.074*edad) / 4.184;
+    return acc + Math.max(c / 60, 0);
+  }, 0);
+}
+
+function ts() {
+  return new Date().toLocaleTimeString('es', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+}
+
+// ── Grafico canvas ───────────────────────────────────
+function dibujarChart(canvasId, datos, colorLinea) {
+  const canvas = document.getElementById(canvasId);
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width  = rect.width * dpr;
+  canvas.height = canvas.height * dpr || 140 * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const W = rect.width;
+  const H = canvas.getAttribute('height') * 1 || 140;
+
+  if (datos.length < 2) return;
+
+  const min = Math.max(40, Math.min(...datos) - 15);
+  const max = Math.min(220, Math.max(...datos) + 15);
+  const rng = max - min;
+
+  // Grid
+  ctx.strokeStyle = '#1e1e2e';
+  ctx.lineWidth = 1;
+  [0.25, 0.5, 0.75].forEach(f => {
+    const y = H * f;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  });
+
+  // Area
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, colorLinea + '33');
+  grad.addColorStop(1, colorLinea + '00');
+
+  ctx.beginPath();
+  datos.forEach((v, i) => {
+    const x = (i / (datos.length - 1)) * W;
+    const y = H - ((v - min) / rng) * H * 0.85 - H * 0.05;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath();
+  ctx.fillStyle = grad; ctx.fill();
+
+  // Linea
+  ctx.beginPath();
+  ctx.strokeStyle = colorLinea;
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round';
+  datos.forEach((v, i) => {
+    const x = (i / (datos.length - 1)) * W;
+    const y = H - ((v - min) / rng) * H * 0.85 - H * 0.05;
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+
+  // Labels Y
+  ctx.fillStyle = '#555';
+  ctx.font = '10px sans-serif';
+  ctx.textAlign = 'right';
+  [min, Math.round((min+max)/2), max].forEach(v => {
+    const y = H - ((v - min) / rng) * H * 0.85 - H * 0.05;
+    ctx.fillText(v, W - 4, y - 3);
+  });
+}
+
+// ── Flujo principal ──────────────────────────────────
+async function iniciar() {
+  const nombre = document.getElementById('inp-nombre').value.trim();
+  const edad   = parseInt(document.getElementById('inp-edad').value);
+  const peso   = parseInt(document.getElementById('inp-peso').value);
+
+  if (!nombre || !edad || !peso) { alert('Completa todos los campos'); return; }
+  if (!navigator.bluetooth) {
+    alert('Este navegador no soporta Bluetooth.\nUsa Chrome en Android.');
+    return;
+  }
+
+  S.nombre = nombre;
+  S.edad = edad;
+  S.peso = peso;
+  S.datos = [];
+  S.liveData = [];
+  S.liveLabels = [];
+
+  mostrar('p-conectando');
+
+  try {
+    S.device = await navigator.bluetooth.requestDevice({
+      filters: [{ services: ['heart_rate'] }]
+    });
+
+    const server = await S.device.gatt.connect();
+    const service = await server.getPrimaryService('heart_rate');
+    S.char = await service.getCharacteristic('heart_rate_measurement');
+
+    S.char.addEventListener('characteristicvaluechanged', onBPM);
+    await S.char.startNotifications();
+
+    // Iniciar sesion
+    document.getElementById('txt-nombre').textContent = nombre;
+    S.seg = 0;
+    S.cronoTimer = setInterval(() => {
+      S.seg++;
+      document.getElementById('txt-crono').textContent = formatCrono(S.seg);
+    }, 1000);
+
+    mostrar('p-sesion');
+
+  } catch(e) {
+    mostrar('p-perfil');
+    if (!e.message.includes('cancelled')) {
+      alert('No se pudo conectar: ' + e.message);
+    }
+  }
+}
+
+function onBPM(ev) {
+  const bpm = parseBPM(ev.target.value);
+  const t = ts();
+  const z = zona(bpm, S.edad);
+
+  S.datos.push({ ts: t, bpm });
+
+  // Actualizar UI
+  document.getElementById('txt-bpm').textContent = bpm;
+  document.getElementById('txt-bpm').className = 'bpm-num c' + z;
+
+  const tag = document.getElementById('txt-zona');
+  tag.textContent = `ZONA ${z} — ${ZONA_LABELS[z-1]}`;
+  tag.className = 'zona-tag t' + z;
+
+  for (let i = 1; i <= 5; i++) {
+    document.getElementById('pill'+i).classList.toggle('on', i === z);
+  }
+
+  // Grafico live (ultimos 60 puntos)
+  S.liveData.push(bpm);
+  S.liveLabels.push(t);
+  if (S.liveData.length > 60) { S.liveData.shift(); S.liveLabels.shift(); }
+
+  dibujarChart('cv-live', S.liveData, ZONA_COLORES[z-1]);
+}
+
+function cancelar() {
+  if (S.device && S.device.gatt.connected) S.device.gatt.disconnect();
+  mostrar('p-perfil');
+}
+
+async function terminar() {
+  clearInterval(S.cronoTimer);
+  try {
+    if (S.char) await S.char.stopNotifications();
+    if (S.device && S.device.gatt.connected) S.device.gatt.disconnect();
+  } catch(e) {}
+
+  mostrarResumen();
+}
+
+function mostrarResumen() {
+  const datos = S.datos;
+  if (!datos.length) { alert('Sin datos'); return; }
+
+  const bpms = datos.map(d => d.bpm);
+  const edad = S.edad; const peso = S.peso; const sexo = S.sexo;
+  const maxHR = 220 - edad;
+
+  const promedio = Math.round(bpms.reduce((a,b) => a+b, 0) / bpms.length);
+  const cal = Math.round(calorias(bpms, edad, peso, sexo));
+  const min = Math.min(...bpms);
+  const max = Math.max(...bpms);
+  const dur = formatCrono(S.seg);
+
+  // Zonas
+  const zc = [0,0,0,0,0];
+  bpms.forEach(b => zc[zona(b, edad)-1]++);
+  const total = bpms.length;
+  const zpct = zc.map(c => total ? Math.round(c/total*100) : 0);
+
+  document.getElementById('r-nombre').textContent = S.nombre;
+  document.getElementById('r-duracion').textContent = dur;
+  document.getElementById('r-calorias').textContent = cal;
+  document.getElementById('r-promedio').textContent = promedio;
+  document.getElementById('r-max').textContent = max;
+  document.getElementById('r-min').textContent = min;
+
+  for (let i = 1; i <= 5; i++) {
+    document.getElementById('fill'+i).style.width = zpct[i-1] + '%';
+    document.getElementById('pct'+i).textContent = zpct[i-1] + '%';
+  }
+
+  mostrar('p-resumen');
+
+  setTimeout(() => {
+    dibujarChart('cv-resumen', bpms, '#e74c3c');
+  }, 100);
+}
+
+function nuevaSesion() { mostrar('p-perfil'); }
+
+// Ajustar canvas al cambiar orientacion
+window.addEventListener('resize', () => {
+  if (document.getElementById('p-sesion').classList.contains('activa')) {
+    dibujarChart('cv-live', S.liveData, '#e74c3c');
+  }
+});
+</script>
+</body>
+</html>
